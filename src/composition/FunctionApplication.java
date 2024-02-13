@@ -1,6 +1,5 @@
 package composition;
-// Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
+
 public class FunctionApplication {
     public static void main(String[] args) {
 
@@ -16,11 +15,18 @@ public class FunctionApplication {
                 return arg * arg;
             }
         };
+
+        Function<Integer, Function<Integer, Integer>> add = x -> y -> x + y;
+
         Function<Integer, Integer> tripleLambda = x -> x * 3;
         Function<Integer, Integer> squareLambda = x -> x * x;
-        Function<Integer, Integer> composedFunction = FunctionComposition.compose(triple, square);
+
         Function<Integer, Integer> composedLambdaFunction = FunctionComposition.compose(tripleLambda, squareLambda);
-        System.out.println(composedFunction.apply(9));
-        System.out.println(composedLambdaFunction.apply(9));
+        System.out.println(composedLambdaFunction.apply(4));
+        System.out.println(add.apply(3).apply(4));
+
+        Integer x = Function.<Integer, Integer, Integer>higherCompose().apply(square).apply(triple).apply(2);
+        System.out.println(x);
+
     }
 }
