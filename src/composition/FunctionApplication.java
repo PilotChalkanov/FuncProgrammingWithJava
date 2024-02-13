@@ -3,18 +3,8 @@ package composition;
 public class FunctionApplication {
     public static void main(String[] args) {
 
-        Function<Integer, Integer> triple = new Function<Integer, Integer>() {
-            @Override
-            public Integer apply(Integer arg) {
-                return arg * 3;
-            }
-        };
-        Function<Integer, Integer> square = new Function<Integer, Integer>() {
-            @Override
-            public Integer apply(Integer arg) {
-                return arg * arg;
-            }
-        };
+        Function<Integer, Integer> triple = arg -> arg * 3;
+        Function<Integer, Integer> square = arg -> arg * arg;
 
         Function<Integer, Function<Integer, Integer>> add = x -> y -> x + y;
 

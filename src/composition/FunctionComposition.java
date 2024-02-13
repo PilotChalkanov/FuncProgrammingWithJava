@@ -6,5 +6,7 @@ public class FunctionComposition {
 
        return arg -> f1.apply(f2.apply(arg));
     }
+    String
+
 }
 
