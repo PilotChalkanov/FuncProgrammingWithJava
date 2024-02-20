@@ -1,6 +1,4 @@
-package function;
-
-import java.util.function.Function;
+package funcstructs;
 
 public class PartialApplication {
     public static void main(String[] args) {

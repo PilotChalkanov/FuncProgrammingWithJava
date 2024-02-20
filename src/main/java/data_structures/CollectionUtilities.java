@@ -1,5 +1,9 @@
 package data_structures;
 
+import caseclass.Effect;
+
+import funcstructs.Executable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,18 +101,18 @@ public class CollectionUtilities<T> {
         return foldR(list, accList, addToList);
     }
 
-    public static <T, U> List<U> map1 (List<T> ts, Function<T, U> f) {
+    public static <T, U> List<U> map1(List<T> ts, Function<T, U> f) {
         List<U> accList = list();
         for (T el : ts)
             accList = append(accList, f.apply(el));
         return accList;
     }
 
-    public static <T, U> List<U> map2 (List<T> ts, Function<T, U> f){
+    public static <T, U> List<U> map2(List<T> ts, Function<T, U> f) {
         return foldLeft(ts, list(), x -> y -> append(x, f.apply(y)));
     }
 
-    public static <T, U> List<U> map3 (List<T> ts, Function<T, U> f){
+    public static <T, U> List<U> map3(List<T> ts, Function<T, U> f) {
         return foldR(ts, list(), x -> y -> prepend(f.apply(x), y));
     }
 
@@ -116,6 +120,40 @@ public class CollectionUtilities<T> {
         return foldLeft(list, list(), x -> y -> prepend(y, x));
     }
 
+
+    public static <T> void forEach(List<T> ts, Effect<T> e) {
+        for (T t : ts) e.apply(t);
+    }
+
+    public static List<Integer> range(int start, int end) {
+        List<Integer> ls = new ArrayList<>();
+        while (start <= end) {
+            ls = append(ls, start);
+            start++;
+        }
+        return ls;
+    }
+
+    public static <T> List<T> unfold(T seed, Function<T, T> f, Function<T, Boolean> p) {
+        List<T> ls = new ArrayList<>();
+        while (p.apply(seed)) {
+            ls = append(ls, f.apply(seed));
+            seed = f.apply(seed);
+        }
+        return ls;
+    }
+
+    public static List<Integer> range2(int start, int end) {
+        return unfold(start, x -> x + 1, y -> y < end);
+    }
+
+// HIGHLIGHTS
+    public static List<Integer> recurseRange(int start, int end) {
+        return end <= start ?
+                list() :
+                prepend(start, recurseRange(start + 1, end));
+
+    }
 
     public static void main(String[] args) {
         List<Integer> intList = list(1, 2, 3, 4, 5);
@@ -126,8 +164,45 @@ public class CollectionUtilities<T> {
         Integer reducedR = foldR(intList, 0, f2);
         System.out.println(reverse(intList));
         System.out.println(reducedR);
-        System.out.println(map1(intList, x -> x *2));
-        System.out.println(map2(intList, x -> x *2));
-        System.out.println(map3(intList, x -> x *2));
+        System.out.println(map1(intList, x -> x * 2));
+        System.out.println(map2(intList, x -> x * 2));
+        System.out.println(map3(intList, x -> x * 2));
+
+        Function<Double, Double> addTax = x -> x * 1.09;
+        Function<Double, Double> addShipping = x -> x + 3.50;
+        List<Double> prices = list(10.10, 23.45, 32.07, 9.23);
+        List<Double> pricesIncludingTax = map2(prices, addTax);
+        List<Double> pricesIncludingShipping =
+                map2(pricesIncludingTax, addShipping);
+        System.out.println(pricesIncludingShipping);
+        Function<Double, Double> composedMap = addTax.compose(addShipping);
+        List<Double> pricesWithTaxAndShipping = map2(prices, composedMap);
+        List<Double> list_ = map3(intList, x -> (double) x);
+        System.out.println(map2(list_, composedMap));
+
+        Effect<Double> printWith2decimals = x -> {
+            System.out.printf("%.2f", x);
+            System.out.println();
+        };
+//
+//        forEach(pricesIncludingShipping, printWith2decimals);
+
+        Function<Executable, Function<Executable, Executable>> compose =
+                x -> y -> () -> {
+                    x.exec();
+                    y.exec();
+                };
+        Executable program = foldLeft(pricesIncludingShipping, () -> {
+                },
+                e -> d -> compose.apply(e).apply(() -> printWith2decimals.apply(d)));
+        program.exec();
+
+        List<Integer> lsInt = range(0, 150);
+        System.out.println(lsInt);
+
+        List<Integer> lsInt2 = range2(0, 150);
+        System.out.println(lsInt);
     }
+
+
 }

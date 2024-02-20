@@ -1,4 +1,4 @@
-package function;
+package funcstructs;
 
 public class Composing {
     public static void main(String[] args) {

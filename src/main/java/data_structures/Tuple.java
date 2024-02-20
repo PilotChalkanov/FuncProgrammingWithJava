@@ -1,6 +1,6 @@
 package data_structures;
 
-import function.IFunction;
+import funcstructs.IFunction;
 
 import java.util.Objects;
 
