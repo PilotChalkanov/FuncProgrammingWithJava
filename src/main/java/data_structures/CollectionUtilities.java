@@ -2,7 +2,7 @@ package data_structures;
 
 import caseclass.Effect;
 
-import funcstructs.Executable;
+import recursion.TailCall;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
+import static recursion.TailCall.*;
 
 public class CollectionUtilities<T> {
     public static <T> List<T> list() {
@@ -66,34 +68,42 @@ public class CollectionUtilities<T> {
         return foldL(tl, accum, f);
     }
 
-    static String addSI(String s, Integer i) {
+    static String addSI(Integer s, String i) {
         return "(" + s + " + " + i + ")";
     }
 
+
     public static <T, U> U foldLeft(List<T> ts, U identity,
                                     Function<U, Function<T, U>> f) {
-        U result = identity;
-        for (T t : ts) {
-            result = f.apply(result).apply(t);
-        }
-        return result;
-    }
+        return foldLRec(ts, identity, f).eval();   }
 
-    public static <T, U> U folRight(List<T> ts, U identity,
-                                    Function<T, Function<U, U>> f) {
-        U result = identity;
-        for (int i = ts.size(); i > 0; i--) {
-            result = f.apply(ts.get(i - 1)).apply(result);
-        }
-        return result;
+    public static <T, U> U foldRight(List<T> ts, U identity,
+                                     Function<T, Function<U, U>> f) {
+        return _foldRight(ts, identity, f).eval();
     }
 
     public static <T, U> U foldR(List<T> ts, U identity,
                                  Function<T, Function<U, U>> f) {
-        return ts.isEmpty()
-                ? identity
-                : f.apply(head(ts)).apply(foldR(tail(ts), identity, f));
+        U result = identity;
+        for (int i = ts.size(); i > 0; i--) {
+            result = f.apply(ts.get(i - 1)).apply(result);
+        }
+        return result;    }
+
+    private static <U, T> TailCall<U> foldLRec(List<T> ts, U identity, Function<U, Function<T, U>> f) {
+        return ts.isEmpty() ? ret(identity) : sus(
+                () -> foldLRec(tail(ts), f.apply(identity).apply(head(ts)), f)
+        );
+
     }
+
+    public static <T, U> TailCall<U> _foldRight(List<T> ts, U identity,
+                                                Function<T, Function<U, U>> f){
+        return ts.isEmpty() ?
+                ret(identity) :
+                sus(() -> _foldRight(tail(ts), f.apply(head(ts)).apply(identity), f));
+    }
+
 
     public static <T> List<T> reverse(List<T> list) {
         List<T> accList = new ArrayList<>();
@@ -125,13 +135,8 @@ public class CollectionUtilities<T> {
         for (T t : ts) e.apply(t);
     }
 
-    public static List<Integer> range(int start, int end) {
-        List<Integer> ls = new ArrayList<>();
-        while (start <= end) {
-            ls = append(ls, start);
-            start++;
-        }
-        return ls;
+    public static List<Number> range(int start, int end) {
+        return rangeRec(start, end, list()).eval();
     }
 
     public static <T> List<T> unfold(T seed, Function<T, T> f, Function<T, Boolean> p) {
@@ -147,61 +152,65 @@ public class CollectionUtilities<T> {
         return unfold(start, x -> x + 1, y -> y < end);
     }
 
-// HIGHLIGHTS
-    public static List<Integer> recurseRange(int start, int end) {
-        return end <= start ?
-                list() :
-                prepend(start, recurseRange(start + 1, end));
-
+    // HIGHLIGHTS
+    public static TailCall<List<Number>> rangeRec(Integer start, Integer end, List<Number> ls) {
+        return start >= end ?
+                ret(ls) :
+                sus(() -> rangeRec(start + 1, end, append(ls, start)));
     }
 
     public static void main(String[] args) {
         List<Integer> intList = list(1, 2, 3, 4, 5);
         Integer reducedList = foldL(intList, 0, (x, y) -> x + y);
-        Function<String, Function<Integer, String>> f = x -> y -> addSI(x, y);
-        String reducedL = foldLeft(intList, "0", f);
-        Function<Integer, Function<Integer, Integer>> f2 = x -> y -> x + y;
-        Integer reducedR = foldR(intList, 0, f2);
-        System.out.println(reverse(intList));
-        System.out.println(reducedR);
-        System.out.println(map1(intList, x -> x * 2));
-        System.out.println(map2(intList, x -> x * 2));
-        System.out.println(map3(intList, x -> x * 2));
-
-        Function<Double, Double> addTax = x -> x * 1.09;
-        Function<Double, Double> addShipping = x -> x + 3.50;
-        List<Double> prices = list(10.10, 23.45, 32.07, 9.23);
-        List<Double> pricesIncludingTax = map2(prices, addTax);
-        List<Double> pricesIncludingShipping =
-                map2(pricesIncludingTax, addShipping);
-        System.out.println(pricesIncludingShipping);
-        Function<Double, Double> composedMap = addTax.compose(addShipping);
-        List<Double> pricesWithTaxAndShipping = map2(prices, composedMap);
-        List<Double> list_ = map3(intList, x -> (double) x);
-        System.out.println(map2(list_, composedMap));
-
-        Effect<Double> printWith2decimals = x -> {
-            System.out.printf("%.2f", x);
-            System.out.println();
-        };
+//        Function<String, Function<String, Integer>> f = ;
+//        String reducedL = foldLeft(intList, "0", x -> y -> addSI(x, y));
+//        System.out.println(reducedL);
+//        Function<Integer, Function<Integer, Integer>> f2 = x -> y -> x + y;
+//        Integer reducedR = foldR(intList, 0, f2);
+//        System.out.println(reverse(intList));
+//        System.out.println(reducedR);
+//        System.out.println(map1(intList, x -> x * 2));
+//        System.out.println(map2(intList, x -> x * 2));
+//        System.out.println(map3(intList, x -> x * 2));
 //
-//        forEach(pricesIncludingShipping, printWith2decimals);
-
-        Function<Executable, Function<Executable, Executable>> compose =
-                x -> y -> () -> {
-                    x.exec();
-                    y.exec();
-                };
-        Executable program = foldLeft(pricesIncludingShipping, () -> {
-                },
-                e -> d -> compose.apply(e).apply(() -> printWith2decimals.apply(d)));
-        program.exec();
-
-        List<Integer> lsInt = range(0, 150);
+//        Function<Double, Double> addTax = x -> x * 1.09;
+//        Function<Double, Double> addShipping = x -> x + 3.50;
+//        List<Double> prices = list(10.10, 23.45, 32.07, 9.23);
+//        List<Double> pricesIncludingTax = map2(prices, addTax);
+//        List<Double> pricesIncludingShipping =
+//                map2(pricesIncludingTax, addShipping);
+//        System.out.println(pricesIncludingShipping);
+//        Function<Double, Double> composedMap = addTax.compose(addShipping);
+//        List<Double> pricesWithTaxAndShipping = map2(prices, composedMap);
+//        List<Double> list_ = map3(intList, x -> (double) x);
+//        System.out.println(map2(list_, composedMap));
+//
+//        Effect<Double> printWith2decimals = x -> {
+//            System.out.printf("%.2f", x);
+//            System.out.println();
+//        };
+////
+////        forEach(pricesIncludingShipping, printWith2decimals);
+//
+//        Function<Executable, Function<Executable, Executable>> compose =
+//                x -> y -> () -> {
+//                    x.exec();
+//                    y.exec();
+//                };
+//        Executable program = foldLeft(pricesIncludingShipping, () -> {
+//                },
+//                e -> d -> compose.apply(e).apply(() -> printWith2decimals.apply(d)));
+//        program.exec();
+//
+        List<Number> lsInt = range(0, 100);
         System.out.println(lsInt);
 
-        List<Integer> lsInt2 = range2(0, 150);
-        System.out.println(lsInt);
+        List<Integer> list = list(1, 2, 3, 4, 5);
+        System.out.println(foldRight(list, "0", x -> y -> addSI(x, y)));
+
+//
+//        List<Integer> lsInt2 = range2(0, 150);
+//        System.out.println(lsInt);
     }
 
 
