@@ -1,15 +1,9 @@
 package funcstructs;
 
 
-
-import recursion.TailCall;
-
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
-import static java.util.function.Function.identity;
-import static recursion.TailCall.*;
 import static data_structures.CollectionUtilities.*;
 
 public interface IFunction<T, R> { // U = R
@@ -26,15 +20,30 @@ public interface IFunction<T, R> { // U = R
                 -> f.apply(g.apply(x));
 
     }
-    
-    static <T> Function<T, T> composeAll(List<Function<T, T>> funcList){
-        return composeRec(funcList, identity()).eval();
+
+    static <T> Function<T, T> composeAll(List<Function<T, T>> fList) {
+        return x -> {
+            T y = x;
+            for (Function<T, T> f : fList) {
+                y = f.apply(y);
+            }
+            return y;
+        };
     }
 
-    static <T> TailCall<Function<T,T>> composeRec(List<Function<T,T>> funcList, Function<T, T> acc) {
-        return funcList.isEmpty() ?
-                ret(acc) :
-                sus(() ->composeRec(tail(funcList), acc.compose(head(funcList))));
+    static <T> Function<T, T> composeAllViaFoldRight(List<Function<T, T>> list) {
+        return x -> foldRight(list, x, a -> a::apply);
+    }
 
+    static <T> Function<T, T> composeAllViaFoldLeft(List<Function<T, T>> list) {
+        return x -> foldLeft(reverse(list), x, a -> b -> b.apply(a));
+    }
+
+    static <T> Function<T, T> andThanAllViaFoldRight(List<Function<T, T>> list) {
+        return x -> foldRight(reverse(list), x, a -> a::apply);
+    }
+
+    static <T> Function<T, T> andThanAllViaFoldLeft(List<Function<T, T>> list) {
+        return x -> foldLeft(list, x, a -> b -> b.apply(a));
     }
 }

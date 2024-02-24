@@ -1,7 +1,6 @@
 package data_structures;
 
 import caseclass.Effect;
-
 import recursion.TailCall;
 
 import java.util.ArrayList;
@@ -11,7 +10,8 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static recursion.TailCall.*;
+import static recursion.TailCall.ret;
+import static recursion.TailCall.sus;
 
 public class CollectionUtilities<T> {
     public static <T> List<T> list() {
@@ -75,7 +75,8 @@ public class CollectionUtilities<T> {
 
     public static <T, U> U foldLeft(List<T> ts, U identity,
                                     Function<U, Function<T, U>> f) {
-        return foldLRec(ts, identity, f).eval();   }
+        return foldLRec(ts, identity, f).eval();
+    }
 
     public static <T, U> U foldRight(List<T> ts, U identity,
                                      Function<T, Function<U, U>> f) {
@@ -88,7 +89,8 @@ public class CollectionUtilities<T> {
         for (int i = ts.size(); i > 0; i--) {
             result = f.apply(ts.get(i - 1)).apply(result);
         }
-        return result;    }
+        return result;
+    }
 
     private static <U, T> TailCall<U> foldLRec(List<T> ts, U identity, Function<U, Function<T, U>> f) {
         return ts.isEmpty() ? ret(identity) : sus(
@@ -98,7 +100,7 @@ public class CollectionUtilities<T> {
     }
 
     public static <T, U> TailCall<U> _foldRight(List<T> ts, U identity,
-                                                Function<T, Function<U, U>> f){
+                                                Function<T, Function<U, U>> f) {
         return ts.isEmpty() ?
                 ret(identity) :
                 sus(() -> _foldRight(tail(ts), f.apply(head(ts)).apply(identity), f));
@@ -123,7 +125,7 @@ public class CollectionUtilities<T> {
     }
 
     public static <T, U> List<U> map3(List<T> ts, Function<T, U> f) {
-        return foldR(ts, list(), x -> y -> prepend(f.apply(x), y));
+        return foldRight(ts, list(), x -> y -> prepend(f.apply(x), y));
     }
 
     public static <T> List<T> reverse2(List<T> list) {

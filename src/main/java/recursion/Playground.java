@@ -1,18 +1,19 @@
 package recursion;
-import java.math.BigInteger;
-import java.util.List;
 
-import static recursion.TailCall.*;
+import java.math.BigInteger;
+
+import static recursion.TailCall.ret;
+import static recursion.TailCall.sus;
 
 public class Playground {
-    static int add(int x, int y){
+    static int add(int x, int y) {
         return addRec(x, y).eval();
     }
 
     static TailCall<Integer> addRec(int x, int y) {
         return y == 0 ?
                 ret(x) :
-                sus(() -> addRec(x+1, y-1));
+                sus(() -> addRec(x + 1, y - 1));
 
     }
 
@@ -27,14 +28,15 @@ public class Playground {
     public static BigInteger fib(int x) {
         return fib_(BigInteger.ONE, BigInteger.ZERO, BigInteger.valueOf(x)).eval();
     }
+
     private static TailCall<BigInteger> fib_(BigInteger acc1, BigInteger acc2,
-                                   BigInteger x) {
+                                             BigInteger x) {
         if (x.equals(BigInteger.ZERO)) {
             return ret(BigInteger.ZERO);
         } else if (x.equals(BigInteger.ONE)) {
             return ret(acc1.add(acc2));
         } else {
-            return sus(()->fib_(acc2, acc1.add(acc2), x.subtract(BigInteger.ONE)));
+            return sus(() -> fib_(acc2, acc1.add(acc2), x.subtract(BigInteger.ONE)));
         }
     }
 
@@ -57,7 +59,7 @@ public class Playground {
     }
 
     public static void main(String[] args) {
-        System.out.println(add(4,500));
+        System.out.println(add(4, 500));
 
         long startTime = System.nanoTime();
         System.out.println(fib(5000));
