@@ -3,6 +3,8 @@ package data_structures;
 
 import recursion.TailCall;
 
+import java.util.function.Function;
+
 import static recursion.TailCall.ret;
 import static recursion.TailCall.sus;
 
@@ -18,6 +20,10 @@ public abstract class LList<A> {
     public abstract LList<A> setHead(A el);
 
     public abstract String toString();
+
+    public abstract LList<A> drop(int idx);
+
+    public abstract LList<A> dropWhile(Function<A, Boolean> f);
 
     // singleton instance representing empty llist
     @SuppressWarnings("rawtypes")
@@ -47,11 +53,17 @@ public abstract class LList<A> {
             throw new IllegalStateException("setHead called on empty list");
         }
 
+        public LList<A> drop(int idx) {
+            return this;
+        }
+
+        public LList<A> dropWhile(Function<A, Boolean> f) {
+            return this;
+        }
+
         public String toString() {
             return "[NIL]";
         }
-
-
     }
 
     private static class Cons<A> extends LList<A> {
@@ -84,10 +96,35 @@ public abstract class LList<A> {
             return String.format("[%sNIL]", _toString(this, new StringBuilder()).eval());
         }
 
+        public LList<A> drop(int idx) {
+            return idx <= 0 ?
+                    this :
+                    _drop(idx, this).eval();
+        }
+
+        public LList<A> dropWhile(Function<A, Boolean> f) {
+            return _dropWhile(f, this).eval();
+        }
+
+        private TailCall<LList<A>> _dropWhile(Function<A, Boolean> f, LList<A> ls) {
+            return (!ls.isEmpty()) && f.apply(ls.head()) ?
+                    sus(() -> _dropWhile(f, ls.tail())) :
+                    ret(ls);
+        }
+
+        private TailCall<LList<A>> _drop(int idx, LList<A> ls) {
+            return (ls instanceof LList.Nil<A>) ?
+                    ret(new Nil<>()) :
+                    (idx <= 0) ?
+                            ret(new Cons<>(ls.head(), ls.tail())) :
+                            sus(() -> _drop(idx - 1, ls.tail()));
+        }
+
+
         private TailCall<StringBuilder> _toString(LList<A> ls, StringBuilder acc) {
             return ls.isEmpty() ?
                     ret(acc) :
-                    sus(() -> _toString(ls.tail(), acc.append(ls.head())));
+                    sus(() -> _toString(ls.tail(), acc.append(ls.head() + ", ")));
 
         }
 
@@ -121,6 +158,11 @@ public abstract class LList<A> {
         LList<Integer> ls = Cons.list(1, 2, 3, 4);
         ls.cons(0);
         ls.setHead(1000);
+        System.out.println(ls.toString());
+        ls = ls.cons(0).drop(1);
+        System.out.println(ls.toString());
+        ls = ls.dropWhile(x -> x < 4);
+        System.out.println(ls.toString());
     }
 
 }
