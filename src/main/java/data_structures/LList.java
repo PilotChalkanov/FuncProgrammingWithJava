@@ -1,10 +1,23 @@
 package data_structures;
 
+
+import recursion.TailCall;
+
+import static recursion.TailCall.ret;
+import static recursion.TailCall.sus;
+
 public abstract class LList<A> {
-    public A head;
-    public LList<A> tail;
+    public abstract A head();
+
+    public abstract LList<A> tail();
 
     public abstract boolean isEmpty();
+
+    public abstract LList<A> cons(A el);
+
+    public abstract LList<A> setHead(A el);
+
+    public abstract String toString();
 
     // singleton instance representing empty llist
     @SuppressWarnings("rawtypes")
@@ -25,7 +38,22 @@ public abstract class LList<A> {
         public boolean isEmpty() {
             return true;
         }
+
+        public LList<A> cons(A el) {
+            return new Cons<>(el, this);
+        }
+
+        public LList<A> setHead(A el) {
+            throw new IllegalStateException("setHead called on empty list");
+        }
+
+        public String toString() {
+            return "[NIL]";
+        }
+
+
     }
+
     private static class Cons<A> extends LList<A> {
 
         private final A head;
@@ -43,6 +71,30 @@ public abstract class LList<A> {
         public LList<A> tail() {
             return tail;
         }
+
+        public LList<A> cons(A el) {
+            return new Cons<>(el, this);
+        }
+
+        public LList<A> setHead(A el) {
+            return new Cons<>(el, tail());
+        }
+
+        public String toString() {
+            return String.format("[%sNIL]", _toString(this, new StringBuilder()).eval());
+        }
+
+        private TailCall<StringBuilder> _toString(LList<A> ls, StringBuilder acc) {
+            return ls.isEmpty() ?
+                    ret(acc) :
+                    sus(() -> _toString(ls.tail(), acc.append(ls.head())));
+
+        }
+
+        public static <A> LList<A> setHead(LList<A> list, A h) {
+            return list.setHead(h);
+        }
+
 
         public boolean isEmpty() {
             return false;
@@ -63,6 +115,12 @@ public abstract class LList<A> {
         }
 
 
+    }
+
+    public static void main(String[] args) {
+        LList<Integer> ls = Cons.list(1, 2, 3, 4);
+        ls.cons(0);
+        ls.setHead(1000);
     }
 
 }

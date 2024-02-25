@@ -1,6 +1,5 @@
 package caseclass;
 
-import com.sun.corba.se.impl.copyobject.FallbackObjectCopierImpl;
 
 public interface Result<T> {
     void bind(Effect<T> success, Effect<String> failure);
