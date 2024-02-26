@@ -3,6 +3,7 @@ package data_structures;
 
 import recursion.TailCall;
 
+import java.util.List;
 import java.util.function.Function;
 
 import static recursion.TailCall.ret;
@@ -24,6 +25,25 @@ public abstract class LList<A> {
     public abstract LList<A> drop(int idx);
 
     public abstract LList<A> dropWhile(Function<A, Boolean> f);
+
+    public abstract LList<A> init();
+
+    public abstract LList<A> reverse();
+
+    public abstract int size();
+
+    public abstract <B> B foldLeft(B identity, Function<B, Function<A, B>> f);
+
+    public abstract <B> B foldRight(B identity, Function<A, Function<B, B>> f);
+
+
+    public static <A> LList<A> concat(LList<A> list1, LList<A> list2) {
+        return list1.isEmpty()
+                ? list2
+                : list2.isEmpty()
+                ? list1
+                : new Cons<>(list1.head(), concat(list1.tail(), list2));
+    }
 
     // singleton instance representing empty llist
     @SuppressWarnings("rawtypes")
@@ -61,9 +81,30 @@ public abstract class LList<A> {
             return this;
         }
 
+        public LList<A> init() {
+            throw new IllegalStateException("init called on empty list");
+        }
+
+        public LList<A> reverse() {
+            return this;
+        }
+
+        public int size() {
+            return 0;
+        }
+
+        public <B> B foldLeft(B identity, Function<B, Function<A, B>> f) {
+            throw new IllegalStateException("foldLeft called on empty list");
+        }
+
+        public <B> B foldRight(B identity, Function<A, Function<B, B>> f) {
+            return null;
+        }
+
         public String toString() {
             return "[NIL]";
         }
+
     }
 
     private static class Cons<A> extends LList<A> {
@@ -106,6 +147,35 @@ public abstract class LList<A> {
             return _dropWhile(f, this).eval();
         }
 
+        public LList<A> init() {
+            return this.reverse().drop(1).reverse();
+        }
+
+        public LList<A> reverse() {
+            return _reverse(this, list()).eval();
+        }
+
+        public int size() {
+            return foldRight(0, ignore -> y -> y + 1);
+        }
+
+        public <B> B foldLeft(B identity, Function<B, Function<A, B>> f) {
+            return _foldLeft(this, identity, f).eval();
+        }
+
+        public TailCall<LList<A>> _reverse(LList<A> ls, LList<A> acc) {
+            return ls.isEmpty()
+                    ? ret(acc)
+                    : sus(() -> _reverse(ls.tail(), acc.cons(ls.head())));
+        }
+
+        private <B> TailCall<B> _foldLeft(LList<A> ls, B identity, Function<B, Function<A, B>> f) {
+            return ls.isEmpty()
+                    ? ret(identity)
+                    : _foldLeft(ls.tail(), f.apply(identity).apply(ls.head()), f);
+
+        }
+
         private TailCall<LList<A>> _dropWhile(Function<A, Boolean> f, LList<A> ls) {
             return (!ls.isEmpty()) && f.apply(ls.head()) ?
                     sus(() -> _dropWhile(f, ls.tail())) :
@@ -137,6 +207,30 @@ public abstract class LList<A> {
             return false;
         }
 
+        public <B> B foldRight(B acc, Function<A, Function<B, B>> f) {
+            return _foldRight(this, acc, f).eval();
+
+        }
+
+        private <B> TailCall<B> _foldRight(LList<A> ls, B acc, Function<A, Function<B, B>> f) {
+            return ls.isEmpty()
+                    ? ret(acc)
+                    : _foldRight(ls.tail(), f.apply(ls.head()).apply(acc), f);
+        }
+
+        public static Integer sum(LList<Integer> ls) {
+            return ls.foldLeft(0, x -> y -> x + y);
+        }
+
+        public static Double product(LList<Double> ls) {
+            return ls.foldLeft(1.0, x -> y -> x * y);
+        }
+
+        public static <A> Integer lengthViaFoldLeft(LList<A> list) {
+            return list.foldLeft(0, x -> ignore -> x + 1);
+        }
+
+
         @SuppressWarnings("unchecked")
         public static <A> LList<A> list() {
             return NIL;
@@ -163,6 +257,14 @@ public abstract class LList<A> {
         System.out.println(ls.toString());
         ls = ls.dropWhile(x -> x < 4);
         System.out.println(ls.toString());
+        LList<Integer> ls1 = Cons.list();
+        LList<Integer> ls2 = Cons.list(9, 10, 11, 12);
+        LList<Integer> ls3 = Cons.concat(ls2, ls1);
+        System.out.println(ls3.reverse());
+        System.out.println(ls3.init());
+        System.out.println(ls3.size());
+        System.out.println(Cons.lengthViaFoldLeft(ls3));
+
     }
 
 }
