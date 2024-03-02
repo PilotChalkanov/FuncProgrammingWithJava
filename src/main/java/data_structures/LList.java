@@ -5,6 +5,7 @@ import recursion.TailCall;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static recursion.TailCall.ret;
 import static recursion.TailCall.sus;
@@ -35,6 +36,12 @@ public abstract class LList<A> {
     public abstract <B> B foldLeft(B identity, Function<B, Function<A, B>> f);
 
     public abstract <B> B foldRight(B identity, Function<A, Function<B, B>> f);
+
+    public abstract <B> LList<B> map(Function<A, B> f);
+
+    public abstract LList<A> filter(Function<A, Boolean> p);
+
+    public abstract <B> LList<B> flatMap(Function<A, LList<B>> f);
 
 
     public static <A> LList<A> concat(LList<A> list1, LList<A> list2) {
@@ -101,6 +108,18 @@ public abstract class LList<A> {
             return null;
         }
 
+        public <B> LList<B> map(Function<A, B> f) {
+            return NIL;
+        }
+
+        public LList<A> filter(Function<A, Boolean> p) {
+            return NIL;
+        }
+
+        public <B> LList<B> flatMap(Function<A, LList<B>> f) {
+            return NIL;
+        }
+
         public String toString() {
             return "[NIL]";
         }
@@ -137,49 +156,17 @@ public abstract class LList<A> {
             return String.format("[%sNIL]", _toString(this, new StringBuilder()).eval());
         }
 
+        private TailCall<StringBuilder> _toString(LList<A> ls, StringBuilder acc) {
+            return ls.isEmpty() ?
+                    ret(acc) :
+                    sus(() -> _toString(ls.tail(), acc.append(ls.head() + ", ")));
+
+        }
+
         public LList<A> drop(int idx) {
             return idx <= 0 ?
                     this :
                     _drop(idx, this).eval();
-        }
-
-        public LList<A> dropWhile(Function<A, Boolean> f) {
-            return _dropWhile(f, this).eval();
-        }
-
-        public LList<A> init() {
-            return this.reverse().drop(1).reverse();
-        }
-
-        public LList<A> reverse() {
-            return _reverse(this, list()).eval();
-        }
-
-        public int size() {
-            return foldRight(0, ignore -> y -> y + 1);
-        }
-
-        public <B> B foldLeft(B identity, Function<B, Function<A, B>> f) {
-            return _foldLeft(this, identity, f).eval();
-        }
-
-        public TailCall<LList<A>> _reverse(LList<A> ls, LList<A> acc) {
-            return ls.isEmpty()
-                    ? ret(acc)
-                    : sus(() -> _reverse(ls.tail(), acc.cons(ls.head())));
-        }
-
-        private <B> TailCall<B> _foldLeft(LList<A> ls, B identity, Function<B, Function<A, B>> f) {
-            return ls.isEmpty()
-                    ? ret(identity)
-                    : _foldLeft(ls.tail(), f.apply(identity).apply(ls.head()), f);
-
-        }
-
-        private TailCall<LList<A>> _dropWhile(Function<A, Boolean> f, LList<A> ls) {
-            return (!ls.isEmpty()) && f.apply(ls.head()) ?
-                    sus(() -> _dropWhile(f, ls.tail())) :
-                    ret(ls);
         }
 
         private TailCall<LList<A>> _drop(int idx, LList<A> ls) {
@@ -190,12 +177,55 @@ public abstract class LList<A> {
                             sus(() -> _drop(idx - 1, ls.tail()));
         }
 
+        public LList<A> dropWhile(Function<A, Boolean> f) {
+            return _dropWhile(f, this).eval();
+        }
 
-        private TailCall<StringBuilder> _toString(LList<A> ls, StringBuilder acc) {
-            return ls.isEmpty() ?
-                    ret(acc) :
-                    sus(() -> _toString(ls.tail(), acc.append(ls.head() + ", ")));
+        private TailCall<LList<A>> _dropWhile(Function<A, Boolean> f, LList<A> ls) {
+            return (!ls.isEmpty()) && f.apply(ls.head()) ?
+                    sus(() -> _dropWhile(f, ls.tail())) :
+                    ret(ls);
+        }
 
+        public LList<A> init() {
+            return this.reverse().drop(1).reverse();
+        }
+
+        public int size() {
+            return foldRight(0, ignore -> y -> y + 1);
+        }
+
+        public <B> B foldLeft(B identity, Function<B, Function<A, B>> f) {
+            return _foldLeft(this, identity, f).eval();
+        }
+
+        private <B> TailCall<B> _foldLeft(LList<A> ls, B identity, Function<B, Function<A, B>> f) {
+            return ls.isEmpty()
+                    ? ret(identity)
+                    : _foldLeft(ls.tail(), f.apply(identity).apply(ls.head()), f);
+
+        }
+
+        public LList<A> reverse() {
+            return _reverse(this, list()).eval();
+        }
+
+        public TailCall<LList<A>> _reverse(LList<A> ls, LList<A> acc) {
+            return ls.isEmpty()
+                    ? ret(acc)
+                    : sus(() -> _reverse(ls.tail(), acc.cons(ls.head())));
+        }
+
+        static public <A> LList<A> reverseViaFoldLeft(LList<A> ls) {
+            return ls.foldLeft(list(), x -> x::cons);
+        }
+
+        public static <A, B> B foldRightViaFoldLeft(B acc, LList<A> ls, Function<A, Function<B, B>> f) {
+            return ls.reverse().foldLeft(acc, x -> y -> f.apply(y).apply(x));
+        }
+
+        public static <A> LList<A> concatViaFold(LList<A> ls, LList<A> ol) {
+            return ls.foldRight(ol, x -> y -> new Cons<>(x, y));
         }
 
         public static <A> LList<A> setHead(LList<A> list, A h) {
@@ -212,6 +242,23 @@ public abstract class LList<A> {
 
         }
 
+        public <B> LList<B> map(Function<A, B> f) {
+            return foldRight(list(), x -> y -> y.cons(f.apply(x)));
+        }
+
+        public LList<A> filter(Function<A, Boolean> p) {
+            return foldRight(list(), x -> y -> p.apply(x) ? y.cons(x) : y);
+        }
+
+        public <B> LList<B> flatMap(Function<A, LList<B>> f) {
+
+            return foldRight(list(), x -> y -> concat(y, (f.apply(x))));
+        }
+
+        public static <A, B> B foldRight(LList<A> ls, B acc, Function<A, Function<B, B>> f) {
+            return ls.foldRight(acc, f);
+        }
+
         private <B> TailCall<B> _foldRight(LList<A> ls, B acc, Function<A, Function<B, B>> f) {
             return ls.isEmpty()
                     ? ret(acc)
@@ -226,8 +273,20 @@ public abstract class LList<A> {
             return ls.foldLeft(1.0, x -> y -> x * y);
         }
 
+        public static LList<Integer> multiplyByThree(LList<Integer> ls) {
+            return ls.foldLeft(list(), (LList<Integer> x) -> (Integer y) -> x.cons(y));
+        }
+
+        public static LList<String> doubleToString(LList<Double> ls) {
+            return ls.foldRight(list(), x -> y -> y.cons(x.toString()));
+        }
+
         public static <A> Integer lengthViaFoldLeft(LList<A> list) {
             return list.foldLeft(0, x -> ignore -> x + 1);
+        }
+
+        public static <A> LList<A> flatten(LList<LList<A>> ls) {
+            return ls.foldRight(list(), (LList<A> x) -> (LList<A> y) -> Cons.concat(x, y));
         }
 
 
@@ -263,8 +322,15 @@ public abstract class LList<A> {
         System.out.println(ls3.reverse());
         System.out.println(ls3.init());
         System.out.println(ls3.size());
-        System.out.println(Cons.lengthViaFoldLeft(ls3));
 
+        System.out.println(Cons.lengthViaFoldLeft(ls3));
+        System.out.println(Cons.reverseViaFoldLeft(ls2));
+        LList<LList<Integer>> nestedList = Cons.list();
+        nestedList = nestedList.cons(Cons.list(1, 2, 3));
+        nestedList = nestedList.cons(Cons.list(4, 5, 6));
+        System.out.println(nestedList);
+        System.out.println(Cons.flatten(nestedList));
+        System.out.println(nestedList.filter(x -> x.head() == 1));
     }
 
 }
